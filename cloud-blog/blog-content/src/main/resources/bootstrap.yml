@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: ${SEVICE_NAME}
+  cloud:
+    nacos:
+      server-addr: ${NACOS_HOST}:${NACOS_PORT}

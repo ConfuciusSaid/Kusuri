@@ -1,0 +1,18 @@
+server:
+  port: ${SERVER_PORT}
+spring:
+  application:
+    name: ${SEVICE_NAME}
+  cloud:
+    nacos:
+      server-addr: ${NACOS_HOST}:${NACOS_PORT}
+    gateway:
+      routes:
+        - id: main-service
+          uri: lb://mainservice
+          predicates:
+            - Path=/main/**
+        - id: blog-service
+          uri: lb://blogservice
+          predicates:
+            - Path=/blog/**
