@@ -12,6 +12,8 @@
         <module>blog-main</module>
         <module>gateway</module>
         <module>blog-content</module>
+        <module>forum-user</module>
+        <module>blog-image</module>
     </modules>
 
     <parent>
@@ -58,7 +60,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
+            <scope>UserTest</scope>
         </dependency>
     </dependencies>
 
