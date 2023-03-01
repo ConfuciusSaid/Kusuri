@@ -1,23 +1,25 @@
 <template>
   <transition name="finish">
-    <div class="start" v-show="$route.path==='/'">
+    <div class="start" v-show="$route.name==='UserSurface'">
       <transition name="avatar">
-        <div class="surface-avatar" v-show="$route.path==='/'" @click="$route.path==='/'?$router.push('/main'):true">
-          <img class="image-avatar" src="http://www.kusuri.world/photos/avatar.png"/>
-        </div>
+        <a class="surface-avatar"
+           v-show="$route.name==='UserSurface'"
+           @click="$route.name==='UserSurface'?$router.push({name:'UserHome',params:{pageNo:1}}):true"
+        >
+          <img class="image-avatar" :src="user.avatar??''"/>
+        </a>
       </transition>
       <transition name="close">
-        <div class="page-close" v-show="$route.path==='/'"></div>
+        <div class="page-close" v-show="$route.name==='UserSurface'"></div>
       </transition>
       <transition name="back">
-        <div class="shadow-wrap" v-show="$route.path==='/'">
+        <div class="shadow-wrap" v-show="$route.name==='UserSurface'">
           <div class="page-back"></div>
         </div>
       </transition>
       <transition name="decorate">
-        <div v-show="$route.path==='/'">
-          <div class="text-show" ref="textShow" :style="'transform: translateX(-'+transform+'px);'">{{ text }}</div>
-          <div :class="'text-mask '+maskClass" ref="textMask" :style="'transform: translateX('+transform+'px);'">|</div>
+        <div v-if="$route.name==='UserSurface'" class="wrapper-motto">
+          <motto-display :motto="user.motto" color="#ffdde5"/>
         </div>
       </transition>
     </div>
@@ -25,15 +27,20 @@
 </template>
 
 <script>
-import {onMounted, onUnmounted, ref} from "vue";
-import {useRoute, useRouter} from "vue-router";
+import {computed, inject, onMounted, onUnmounted, reactive, ref, watch} from "vue";
+import MottoDisplay from "@/components/MottoDisplay";
 
 export default {
   name: "BlogSurface",
+  components: {MottoDisplay},
   setup() {
-    let textList = ["不过是些许风霜罢了", "态度是心的面具",
-      "孤注一掷，不飞则死", "我们都是小人物", "都想走出平凡的深渊",
-      "一个人的坚持会有多难"]
+    let user = inject('user')
+    let textList = ['']
+
+    if (user.value.motto) {
+      textList = user.value.motto.split(' ');
+    }
+
     let index = 0;
     let text = ref(textList[index]);
     let run = ref(true);
@@ -61,7 +68,11 @@ export default {
       if (!run.value) return;
       transform.value += 16;
       current++;
-      if (current === text.value.length) {
+      if (current === text.value.length || text.value.length === 0) {
+        if (text.value.length === 0) {
+          current = 0;
+          transform.value = 4;
+        }
         maskClass.value = "mask-shine";
         setTimeout(() => {
           maskClass.value = "";
@@ -76,7 +87,9 @@ export default {
     }
 
     onMounted(() => {
-      animate();
+      if (user.value.motto != null) {
+        animate();
+      }
     })
     onUnmounted(() => {
       run.value = false;
@@ -87,7 +100,8 @@ export default {
       text,
       transform,
       maskClass,
-      run
+      run,
+      user
     }
   }
 }
@@ -105,43 +119,24 @@ export default {
   top: 80vh;
 }
 
-.text-show, .text-mask {
-  position: absolute;
-  width: 100%;
-  /*text-align: center;*/
-  z-index: 3;
-  top: 75vh;
-  left: 50vw;
-  font-size: 32px;
-  font-family: KaiTi, serif;
-  font-weight: bold;
-}
-
-.text-mask {
-  background-color: #ffdde5;
-}
-
-.mask-shine {
-  animation: mask-shine-animate 1s infinite;
-}
-
-@keyframes mask-shine-animate {
-  0% {
-    opacity: 100%;
-  }
-  50% {
-    opacity: 100%;
-  }
-  51% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 0;
-  }
+.decorate-enter-active {
+  animation: fade2 1.2s linear;
 }
 
 .decorate-leave-active {
   animation: fade .6s;
+}
+
+@keyframes fade2 {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1%;
+  }
+  100% {
+    opacity: 100%;
+  }
 }
 
 @keyframes fade {
@@ -153,12 +148,36 @@ export default {
   }
 }
 
-.finish-leave-active {
+.finish-leave-active, .finish-enter-active {
   animation: 1s;
+}
+
+.avatar-enter-active {
+  animation: avatar2 1s;
 }
 
 .avatar-leave-active {
   animation: avatar .7s;
+}
+
+@keyframes avatar2 {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+    box-shadow: 0 0 0;
+    border: 0;
+  }
+  20% {
+    box-shadow: 0 0 0;
+    border: 0;
+  }
+  60% {
+    transform: scale(120%);
+    opacity: 100%;
+  }
+  100% {
+    transform: scale(100%);
+  }
 }
 
 @keyframes avatar {
@@ -174,6 +193,10 @@ export default {
     transform: scale(0);
     opacity: 0;
   }
+}
+
+.close-enter-active {
+  animation: close .7s reverse;
 }
 
 .close-leave-active {
@@ -195,6 +218,20 @@ export default {
 
 .back-leave-active {
   animation: back 1s;
+}
+
+.back-enter-active {
+  animation: back2 .6s reverse linear;
+}
+
+@keyframes back2 {
+  from {
+
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
 }
 
 @keyframes back {
@@ -276,6 +313,12 @@ export default {
   clip-path: polygon(0 12%, 15% 18%, 50% 35%, 85% 18%, 100% 12%, 100% 100%, 0 100%);
 }
 
+.wrapper-motto {
+  position: absolute;
+  width: 100%;
+  top: 75vh;
+  left: 50vw;
+}
 
 @media (max-width: 719px) {
   .surface-avatar {
@@ -283,7 +326,7 @@ export default {
     height: 150px;
   }
 
-  .image-avatar{
+  .image-avatar {
     height: 150px;
     min-height: 150px;
   }
@@ -299,7 +342,7 @@ export default {
     height: 250px;
   }
 
-  .image-avatar{
+  .image-avatar {
     height: 250px;
     min-height: 250px;
   }

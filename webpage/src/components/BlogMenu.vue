@@ -1,17 +1,26 @@
 <template>
   <div class="wrapper1">
-    <div class="icon-avatar" @click="$router.push('/')">
-      <img class="image-avatar" src="http://www.kusuri.world/photos/avatar.png"/>
+    <a v-if="menu.user.value" class="icon-avatar"
+       @click="menu.avatarClick()">
+      <!--       @click="$router.push({name:'UserSurface'})">-->
+      <img class="image-avatar" :src="menu.user.value.avatar??''"/>
+    </a>
+    <div v-else class="wrapper-empty-avatar">
+      <div class="empty-avatar" @click="login()">登录</div>
+    </div>
+    <a v-if="menu.user.value" class="name"
+    :href="'https://space.bilibili.com/'+menu.user.value.uid"
+    target="_blank">
+      {{ menu.user.value.name ?? '' }}
+    </a>
+    <div v-else class="name">
     </div>
     <div class="can-hide">
-      <router-link class="icon-home wrapper-link" active-class="icon-home wrapper-link active" to="/main">
-        <div>主页</div>
-      </router-link>
-      <router-link class="icon-books wrapper-link" active-class="icon-books wrapper-link active" to="/blog">
-        <div>博客</div>
-      </router-link>
-      <router-link class="icon-bubble wrapper-link" active-class="icon-bubble wrapper-link active" to="/comment">
-        <div>留言</div>
+      <router-link v-for="item in menu.list"
+                   :class="item.className + ' wrapper-link'"
+                   :active-class="item.className + ' wrapper-link active'"
+                   :to="item.to">
+        <div class="menu-static-text">{{ item.text1 }}</div>
       </router-link>
     </div>
     <div class="wrapper-search-box">
@@ -33,30 +42,32 @@
   </div>
   <transition name="popup">
     <div v-if="isMenuShow" class="wrapper2 can-show">
-      <router-link class="icon-home wrapper-link" active-class="icon-home wrapper-link active" to="/main">
-        <div>&nbsp; 主 页</div>
-      </router-link>
-      <router-link class="icon-books wrapper-link" active-class="icon-books wrapper-link active" to="/blog">
-        <div>&nbsp; 博 客</div>
-      </router-link>
-      <router-link class="icon-bubble wrapper-link" active-class="icon-bubble wrapper-link active" to="/comment">
-        <div>&nbsp; 留 言</div>
+      <router-link v-for="item in menu.list"
+                   :class="item.className + ' wrapper-link'"
+                   :active-class="item.className + ' wrapper-link active'"
+                   :to="item.to">
+        <div class="menu-static-text">{{ item.text2 }}</div>
       </router-link>
     </div>
   </transition>
 </template>
 
 <script>
-import {onMounted, ref} from "vue";
+import {inject, onMounted, ref} from "vue";
+import {useRoute} from "vue-router/dist/vue-router";
+import {useRouter} from "vue-router";
 
 export default {
   name: "BlogMenu",
+  props: ['menu'],
   setup() {
     const searchBox = ref(null);
     let searchText = ref("");
     let menuButton = ref(null);
     let menuButtonClass = ref("icon-menu3 ");
     let isMenuShow = ref(false);
+    let route = useRoute();
+    let router = useRouter();
 
     function searchEvent() {
       searchBox.value.blur();
@@ -68,6 +79,14 @@ export default {
       menuButtonClass.value = "icon-menu3 " + (isMenuShow.value ? "active" : "");
     }
 
+    function login() {
+      localStorage.setItem("login_target", JSON.stringify({
+        name: route.name,
+        params: route.params
+      }));
+      router.push({name: "Login"});
+    }
+
     return {
       searchEvent,
       searchBox,
@@ -75,7 +94,8 @@ export default {
       showMenu,
       menuButton,
       isMenuShow,
-      menuButtonClass
+      menuButtonClass,
+      login
     }
   }
 }
@@ -83,25 +103,65 @@ export default {
 
 <style scoped>
 
-.icon-avatar{
-  margin: auto auto auto 15px;
+.icon-avatar {
   display: flex;
   width: 40px;
   height: 40px;
+  min-width: 40px;
   border-radius: 100%;
   overflow: hidden;
   cursor: pointer;
-  border: 2px gray solid;
+  border: 2px solid cornflowerblue;
+  /*background: linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%);*/
   transition: .2s;
+  margin: auto 15px;
 }
 
-.icon-avatar:hover{
-  box-shadow: 0 0 3px dodgerblue,0 0 5px dodgerblue,0 0 10px dodgerblue;
+.icon-avatar:hover {
+  box-shadow: 0 0 1px dodgerblue, 0 0 3px dodgerblue, 0 0 5px dodgerblue;
+}
+
+.name {
+  margin: auto auto auto 0;
+  display: flex;
+  transition: .2s;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .image-avatar {
   width: 100%;
   max-height: 40px;
+}
+
+.wrapper-empty-avatar {
+
+  width: 40px;
+  height: 40px;
+  border-radius: 100%;
+  overflow: hidden;
+  cursor: pointer;
+  margin: auto 15px;
+}
+
+.empty-avatar {
+  width: 39px;
+
+  min-width: 39px;
+  max-height: 39px;
+  min-height: 39px;
+  font-size: 16px;
+  text-align: center;
+  padding-top: 1px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 100%;
+  border: 1px gray solid;
+  color: white;
+  font-weight: bold;
+  font-family: KaiTi, serif;
+  background-color: dodgerblue;
 }
 
 .wrapper1 {
@@ -114,20 +174,23 @@ export default {
   background-color: white;
   justify-content: flex-end;
   box-shadow: 0 0 5px gray;
+  user-select: none;
 }
 
 .wrapper2 {
   display: flex;
   top: 60px;
-  position: sticky;
+  position: absolute;
+  width: 100%;
   background-color: white;
   flex-direction: column;
   box-shadow: 0 0 5px gray;
-  transition: .4s;
+  transition: .2s;
+  z-index: 99;
 }
 
 .popup-enter-active, .popup-leave-active {
-  transition: .5s;
+  transition: .3s;
 }
 
 .popup-enter-from, .popup-leave-to {
@@ -229,8 +292,9 @@ a.wrapper-link.active {
 .input-search:focus {
   cursor: text;
   width: 100px;
-  border-color: lightskyblue;
-  border-radius: 4px;
+  border: 1px solid dodgerblue;
+  outline: dodgerblue;
+  border-radius: 5px;
 }
 
 .icon-menu3 {

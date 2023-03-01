@@ -1,82 +1,114 @@
 <template>
-  <transition name="fade" mode="out-in">
-    <blog-loading v-if="loading"/>
-    <div v-else class="wrapper">
-      <div v-if="!showContent" class="wrapper">
-        <div v-for="blog in blogList" class="desc-item" :key="blog.id" @click="openBlog(blog.id)">
-          <v-md-preview :text="blog.title"></v-md-preview>
-          <span class="icon-clock2">{{ blog.createTime }}</span>
-          <span class="icon-price-tags">{{ blog.tag }}</span>
+  <div class="wrapper-blog-content">
+    <transition name="fade" mode="out-in">
+      <div v-if="loading"
+           style="display:flex;width: 100%;justify-content: center;height: 100vh;">
+        <blog-loading/>
+      </div>
+      <div v-else-if="blogContent" class="content-item-container">
+        <div class="content-item">
+          <v-md-preview :text="blogContent.markdown"></v-md-preview>
+          <div class="open-end-btn" @click="onBack()">
+            <div>返回</div>
+          </div>
         </div>
+        <cmt-post :post="onPost"/>
+        <cmt-preview :page="page" :on-flip="onFlip" :on-delete="onDelete"/>
       </div>
-      <div v-else class="content-item">
-        <div class="open-end-btn" @click="showContent=false;">返回</div>
-        <v-md-preview :text="blogContent.markdown"></v-md-preview>
+      <div v-else>
+        <error-page :code="404" text="文章不存在"/>
       </div>
-      <!--      <v-md-editor v-model="str"/>-->
-    </div>
-  </transition>
+    </transition>
+  </div>
 </template>
 
 <script>
-import {reactive, ref} from "vue";
+import api from "@/js/api";
+import {inject, ref} from "vue";
 import BlogLoading from "@/components/BlogLoading";
-import axios from "axios";
+import ErrorPage from "@/components/ErrorPage";
+import {useRoute, useRouter} from "vue-router";
+import CmtPost from "@/components/CmtPost";
+import CmtPreview from "@/components/CmtPreview";
+import MsgApi from "@/js/message";
 
 export default {
   name: "BlogContent",
-  components: {BlogLoading},
+  components: {CmtPreview, CmtPost, ErrorPage, BlogLoading},
   setup() {
-    let loading = ref(2);
-    let blogList = ref([]);
+    let loading = ref(0);
+    let blogContent = ref(null);
 
-    axios.get("http://www.kusuri.world/api/blog/blog").then(resp => {
-      blogList.value = resp.data;
-      loading.value--;
-      for (let blogIndex in blogList.value) {
-        let blog = blogList.value[blogIndex];
-        axios.get("http://www.kusuri.world/api/blog/info/" + blog.id).then(resp => {
-          blog.tags = resp.data;
-          blog.tag = "";
-          for (let tagIndex in resp.data) {
-            let tag = resp.data[tagIndex];
-            let key = "tag-" + tag.tagId;
-            if (!(tag.name = localStorage.getItem(key))) {
-              axios.get("http://www.kusuri.world/api/blog/tag/" + tag.tagId).then(resp => {
-                localStorage.setItem(key, resp.data);
-                tag.name = resp.data;
-                blog.tag += tag.name;
-              })
-            } else {
-              blog.tag += (" " + tag.name);
-            }
-          }
-          if (+blogIndex === (blogList.value.length - 1)) {
-            loading.value--;
-          }
-        })
-      }
-    })
+    let id = useRoute().params.blogId;
+    let onBack = inject("onBack");
 
-    let showContent = ref(false);
-    let blogContent = ref({});
+    let router = useRouter();
+    let route = useRoute();
 
-    function openBlog(id) {
-      axios.get("http://www.kusuri.world/api/blog/content/" + id).then(resp => {
+    let page = ref(null);
+
+    let lastPage = 1;
+    function loadCmt(pageNo = 1, limit = 3) {
+      lastPage = pageNo;
+      loading.value++;
+      api.getBlogComments(id, pageNo, limit).then(resp => {
+        if (resp.success) {
+          page.value = resp.data;
+        }
+        loading.value--;
+      })
+    }
+
+    function load() {
+      loading.value++;
+      api.getBlogContentById(id).then(resp => {
         blogContent.value = resp.data;
-        if (blogContent.value != null) {
-          showContent.value = true;
+        loading.value--;
+      })
+      loadCmt();
+    }
+
+    load();
+
+    function onFlip(pageNo) {
+      loadCmt(pageNo);
+    }
+
+    function onPost(text) {
+      if (text === "") {
+        MsgApi.error("请先输入要发送的内容");
+        return;
+      }
+      api.insertBlogComment(id, text).then(resp => {
+        if (resp.success) {
+          MsgApi.success("评论发送成功");
+          loadCmt(lastPage)
         }
       })
     }
 
+    function onDelete(comment) {
+      MsgApi.confirm("请确认", "是否删除该评论？(操作不可逆)", state => {
+        if (state === 1) {
+          api.deleteBlogComment(comment.id).then(resp => {
+            if (resp.success) {
+              MsgApi.success("评论删除成功");
+              load(route.params.pageNo ?? 1);
+            }
+          })
+        }
+      }, ["是", "否"]);
+    }
+
     return {
       loading,
-      blogList,
-      showContent,
       blogContent,
-      openBlog,
-      str: ref("")
+      id,
+      onBack,
+      onPost,
+      onFlip,
+      onDelete,
+      page
     }
   }
 }
@@ -84,37 +116,27 @@ export default {
 
 <style scoped>
 
-.open-end-btn {
-  margin: 10px 10px 10px 30px;
-  border-radius: 4px;
-  box-shadow: 0 0 3px gray;
-  text-align: center;
-  width: 45px;
-  height: 23px;
-  cursor: pointer;
-  transition: .2s;
-}
-
-.open-end-btn:active {
-  background-color: dodgerblue;
-  color: white;
-}
-
 .fade-enter-active, .fade-leave-active {
-  transition: .4s;
+  transition: .2s;
 }
 
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
 }
 
-.wrapper {
+.wrapper-blog-content {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.content-item-container{
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.desc-item, .content-item {
+.content-item {
   border: 1px white solid;
   background-color: #fdfdfd;
   border-radius: 5px;
@@ -122,27 +144,50 @@ export default {
   margin: 25px 25px 0;
   padding-bottom: 10px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
-.desc-item {
+.open-end-btn {
+  margin: 10px 10px 10px 30px;
+  border-radius: 100px;
+  box-shadow: 0 0 3px gray;
+  text-align: center;
+  vertical-align: center;
+  width: 45px;
+  height: 45px;
   cursor: pointer;
+  transition: .2s;
+  position: fixed;
+  top: 69%;
+  right: 15px;
+  z-index: 5;
+  background-color: white;
+  user-select: none;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.desc-item > span {
-  margin: 10px 10px 10px 4vw;
+.open-end-btn:active {
+  background-color: dodgerblue;
+  color: white;
 }
 
 @media (max-width: 719px) {
-  .desc-item, .content-item {
+  .content-item {
     margin-left: 15px;
     margin-right: 15px;
   }
 }
 
 @media (min-width: 1200px) {
-  .desc-item, .content-item {
+  .content-item {
     width: 1100px;
     align-self: center;
   }
 }
+
 </style>

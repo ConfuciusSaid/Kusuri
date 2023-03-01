@@ -1,0 +1,129 @@
+.message-popup-container {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    z-index: 300;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    transition: .5s;
+}
+
+.message-popup {
+    margin: 10px auto 0;
+    padding: 10px;
+    border-radius: 4px;
+    transition: .5s;
+    animation: msg-enter .5s;
+    display: flex;
+}
+
+.message-popup-fade {
+    transform: translateY(-50%);
+    opacity: 0;
+    /*animation: msg-enter reverse infinite .6s;*/
+}
+
+@keyframes msg-enter {
+    from {
+        transform: translateY(-50%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 100%;
+    }
+}
+
+.message-success {
+    color: #67c23a;
+    background-color: #f0f9eb;
+    border: 1px solid #e1f3d8;
+}
+
+.message-error {
+    color: #f56c6c;
+    background-color: #fef0f0;
+    border: 1px solid #fde2e2;
+}
+
+.message-tip {
+    color: #909399;
+    background-color: #f4f4f5;
+    border: 1px solid #e9e9eb;
+}
+
+.message-confirm-back {
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, .3);
+    display: flex;
+    justify-content: center;
+    transition: .3s;
+    z-index: 999;
+}
+
+.message-confirm {
+    min-width: 400px;
+    align-self: center;
+    background: white;
+    padding: 0 0 10px;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    box-shadow: 0 0 5px gray;
+    transition: .3s;
+    animation: msg-enter .5s;
+}
+
+.message-confirm-title {
+    font-size: 18px;
+    color: #303133;
+    padding: 15px 15px 10px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.message-confirm-msg {
+    font-size: 14px;
+    color: #606266;
+    padding: 10px 15px;
+}
+
+.message-confirm-btn-part {
+    padding: 5px 15px 0;
+    display: flex;
+    justify-content: end;
+}
+
+.message-confirm-btn {
+    background-color: #409eff;
+    padding: 8px 15px;
+    text-align: center;
+    color: white;
+    margin-left: 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: .3s;
+}
+
+.message-confirm-btn:hover {
+    background-color: #79bbff;
+}
+
+.message-confirm-btn:active {
+    background-color: #337ecc;
+}
+
+.message-confirm-close {
+    color: gray;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.message-confirm-close:hover {
+    color: dodgerblue;
+}
