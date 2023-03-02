@@ -1,6 +1,6 @@
 # Kusuri' world 网站
-简介：模仿yamai.world的拙劣之作
-成品访问：[Kusuri](https://www.kusuri.world)
+- 模仿yamai.world的拙劣之作
+- [Kusuri](https://www.kusuri.world)
 
 # 文件介绍
 
